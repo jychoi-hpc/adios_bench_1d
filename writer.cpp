@@ -13,14 +13,25 @@
 #include <mpi.h>
 #include <adios.h>
 
+#define MAXTASKS 8192
+
 int main(int argc, char *argv[])
 {
     setlinebuf(stdout);
     int rank = 0, nproc = 1;
+    int namelength;
+    char host[MPI_MAX_PROCESSOR_NAME];
+
     MPI_Init(&argc, &argv);
     MPI_Comm comm = MPI_COMM_WORLD;
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &nproc);
+
+    /* All tasks send their host name to task 0 */
+    char *hostmap = (char*) malloc(nproc * MPI_MAX_PROCESSOR_NAME);
+    MPI_Get_processor_name(host, &namelength);
+    MPI_Gather(&host, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, hostmap,
+             MPI_MAX_PROCESSOR_NAME, MPI_CHAR, 0, MPI_COMM_WORLD);
 
     if (argc < 2)
     {
@@ -42,7 +53,13 @@ int main(int argc, char *argv[])
 
     if (rank == 0)
     {
-        printf("%10s: %lu (%.3f MBs)\n", "NX", NX, (float)NX * 4 / 1024 / 1024);
+        printf("====== Info =======\n");
+        printf("%10s: %lu\n", "NX", NX);
+        printf("%10s: %d\n", "Total NPs", nproc);
+        printf("%10s: %.3f\n", "MBs/proc", (float) sizeof(int)*NX/1024/1024);
+        for (int i=0; i<nproc; i++)
+            printf("%10s: %5d %s\n", "MAP", i, &hostmap[i*MPI_MAX_PROCESSOR_NAME]);
+        printf("===================\n\n");
         printf(">>> %5s %5s %9s %9s %9s %9s %9s %9s\n",
                "rank", "step", "t3-t0", "(MB/s)", "t3-t1", "(MB/s)", "t3-t2", "(MB/s)");
         fflush(stdout);
@@ -58,6 +75,8 @@ int main(int argc, char *argv[])
 
         int64_t f;
         double t[4];
+
+        MPI_Barrier(comm);
         t[0] = MPI_Wtime();
         adios_open(&f, "writer", outputfile, mode.c_str(), comm);
         t[1] = MPI_Wtime();

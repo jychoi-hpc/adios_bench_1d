@@ -19,10 +19,19 @@ int main(int argc, char *argv[])
 {
     setlinebuf(stdout);    
     int rank = 0, nproc = 1;
+    int namelength;
+    char host[MPI_MAX_PROCESSOR_NAME];
+
     MPI_Init(&argc, &argv);
     MPI_Comm comm = MPI_COMM_WORLD;
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &nproc);
+
+    /* All tasks send their host name to task 0 */
+    char *hostmap = (char*) malloc(nproc * MPI_MAX_PROCESSOR_NAME);
+    MPI_Get_processor_name(host, &namelength);
+    MPI_Gather(&host, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, hostmap,
+             MPI_MAX_PROCESSOR_NAME, MPI_CHAR, 0, MPI_COMM_WORLD);
 
     if (argc < 2)
     {
@@ -35,6 +44,8 @@ int main(int argc, char *argv[])
 
     ADIOS_FILE *f;
     double t[5];
+
+    MPI_Barrier(comm);
     t[0] = MPI_Wtime();
     f = adios_read_open_file(inputfile, ADIOS_READ_METHOD_BP, comm);
     if (f == NULL)
@@ -45,14 +56,8 @@ int main(int argc, char *argv[])
 
     t[1] = MPI_Wtime();
     ADIOS_VARINFO *vgnx = adios_inq_var(f, "gnx");
-    unsigned int gnx = *(unsigned int *)vgnx->value;
+    unsigned long gnx = *(unsigned long *)vgnx->value;
     int nsteps = vgnx->nsteps;
-    if (rank == 0)
-    {
-        std::cout << "gnx = " << gnx << std::endl;
-        std::cout << "nsteps = " << nsteps << std::endl;
-    }
-    adios_free_varinfo(vgnx);
 
     // 1D decomposition of the columns, which is inefficient for reading!
     uint64_t readsize = gnx / nproc;
@@ -63,10 +68,7 @@ int main(int argc, char *argv[])
         readsize = gnx - readsize * (nproc - 1);
     }
 
-    MPI_Barrier(comm);
-    std::cout << "rank " << rank << " reads " << readsize
-              << " columns from offset " << offset << std::endl;
-
+    //printf("rank %d reads %d columns from offset %d\n", rank, readsize, offset);
     std::vector<int> x(nsteps * readsize) ;
 
     // Create a 2D selection for the subset
@@ -89,6 +91,14 @@ int main(int argc, char *argv[])
     
     if (rank == 0)
     {
+        printf("====== Info =======\n");
+        printf("%10s: %lu\n", "gnx", gnx);
+        printf("%10s: %d\n", "nsteps", nsteps);
+        printf("%10s: %d\n", "Total NPs", nproc);
+        printf("%10s: %.3f\n", "MBs/proc", (float) sizeof(int)*gnx/nproc/1024/1024);
+        for (int i=0; i<nproc; i++)
+            printf("%10s: %5d %s\n", "MAP", i, &hostmap[i*MPI_MAX_PROCESSOR_NAME]);
+        printf("===================\n\n");
         printf(">>> %5s %9s %9s %9s %9s %9s %9s\n",
                "rank", "t3-t0", "(MB/s)", "t3-t1", "(MB/s)", "t3-t2", "(MB/s)");
         fflush(stdout);
@@ -116,6 +126,7 @@ int main(int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
 
     printData(x, nsteps, readsize, offset, rank);
+    adios_free_varinfo(vgnx);
     adios_selection_delete(sel);
     adios_read_finalize_method(ADIOS_READ_METHOD_BP);
     MPI_Barrier(comm);
