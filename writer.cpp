@@ -14,6 +14,7 @@
 #include <adios.h>
 
 #define MAXTASKS 8192
+#define MAXNSTEP 1
 
 int main(int argc, char *argv[])
 {
@@ -42,7 +43,7 @@ int main(int argc, char *argv[])
     const char *outputfile = argv[1];
     const unsigned long NX = argc > 2 ? atol(argv[2]) : 10;
 
-    const int NSTEPS = 5;
+    const int NSTEPS = MAXNSTEP;
     const unsigned long gnx = NX * nproc;
     const unsigned long offs = rank * NX;
 
