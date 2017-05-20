@@ -17,6 +17,7 @@ void printData(std::vector<int> x, int steps, uint64_t nelems,
 
 int main(int argc, char *argv[])
 {
+    setlinebuf(stdout);    
     int rank = 0, nproc = 1;
     MPI_Init(&argc, &argv);
     MPI_Comm comm = MPI_COMM_WORLD;
@@ -33,6 +34,8 @@ int main(int argc, char *argv[])
     adios_read_init_method(ADIOS_READ_METHOD_BP, comm, "verbose=3");
 
     ADIOS_FILE *f;
+    double t[5];
+    t[0] = MPI_Wtime();
     f = adios_read_open_file(inputfile, ADIOS_READ_METHOD_BP, comm);
     if (f == NULL)
     {
@@ -40,6 +43,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    t[1] = MPI_Wtime();
     ADIOS_VARINFO *vgnx = adios_inq_var(f, "gnx");
     unsigned int gnx = *(unsigned int *)vgnx->value;
     int nsteps = vgnx->nsteps;
@@ -49,7 +53,6 @@ int main(int argc, char *argv[])
         std::cout << "nsteps = " << nsteps << std::endl;
     }
     adios_free_varinfo(vgnx);
-
 
     // 1D decomposition of the columns, which is inefficient for reading!
     uint64_t readsize = gnx / nproc;
@@ -71,11 +74,48 @@ int main(int argc, char *argv[])
 
     // Arrays are read by scheduling one or more of them
     // and performing the reads at once
+    t[2] = MPI_Wtime();
     adios_schedule_read(f, sel, "x", 0, nsteps, x.data());
     adios_perform_reads(f, 1);
+    t[3] = MPI_Wtime();
+
+    adios_read_close(f);
+    t[4] = MPI_Wtime();
+
+    double elap[3];
+    elap[0] = t[4] - t[0] - (t[2] - t[1]);
+    elap[1] = t[4] - t[2];
+    elap[2] = t[4] - t[3];
+    
+    if (rank == 0)
+    {
+        printf(">>> %5s %9s %9s %9s %9s %9s %9s\n",
+               "rank", "t3-t0", "(MB/s)", "t3-t1", "(MB/s)", "t3-t2", "(MB/s)");
+        fflush(stdout);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+    
+    printf(">>> %5d %9.03f %9.03e %9.03f %9.03e %9.03f %9.03e\n",
+            rank, 
+            elap[0], (float)sizeof(int) * nsteps * readsize / elap[0] / 1024 / 1024,
+            elap[1], (float)sizeof(int) * nsteps * readsize / elap[1] / 1024 / 1024,
+            elap[2], (float)sizeof(int) * nsteps * readsize / elap[2] / 1024 / 1024);
+
+    double melap[3];
+    MPI_Reduce(elap, melap, 3, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    if (rank == 0)
+    {
+
+        printf(">>> %5s %9.03f %9.03e %9.03f %9.03e %9.03f %9.03e\n",
+                "ALL", 
+                melap[0], (float)sizeof(int) * nsteps * gnx / melap[0] / 1024 / 1024,
+                melap[1], (float)sizeof(int) * nsteps * gnx / melap[1] / 1024 / 1024,
+                melap[2], (float)sizeof(int) * nsteps * gnx / melap[2] / 1024 / 1024);
+        fflush(stdout);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
 
     printData(x, nsteps, readsize, offset, rank);
-    adios_read_close(f);
     adios_selection_delete(sel);
     adios_read_finalize_method(ADIOS_READ_METHOD_BP);
     MPI_Barrier(comm);
@@ -114,7 +154,7 @@ void printData(std::vector<int> x, int steps, uint64_t nelems,
         myfile << std::setw(5) << step << "        ";
         for (int i = 0; i < nelems; i++)
         {
-            myfile << std::setw(5) << x[step*nelems + i];
+            myfile << std::setw(5) << x[step*nelems + i] << " ";
         }
         myfile << std::endl;
     }

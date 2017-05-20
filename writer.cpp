@@ -9,11 +9,13 @@
 
 #include <iostream>
 #include <vector>
+#include <unistd.h>
 #include <mpi.h>
 #include <adios.h>
 
 int main(int argc, char *argv[])
 {
+    setlinebuf(stdout);
     int rank = 0, nproc = 1;
     MPI_Init(&argc, &argv);
     MPI_Comm comm = MPI_COMM_WORLD;
@@ -27,36 +29,73 @@ int main(int argc, char *argv[])
         return 1;
     }
     const char *outputfile = argv[1];
-    const unsigned long NX = argc>2? atol(argv[2]) : 10;
-    std::cout << "NX: " << NX << " (" << (float)NX*4/1024/1024 << " MB)" << std::endl;
+    const unsigned long NX = argc > 2 ? atol(argv[2]) : 10;
 
     const int NSTEPS = 5;
-    const unsigned long gnx = NX*nproc;
-    const unsigned long offs = rank*NX;
+    const unsigned long gnx = NX * nproc;
+    const unsigned long offs = rank * NX;
 
     adios_init("writer.xml", comm);
 
     std::vector<int> x(NX);
     std::string mode = "w";
 
+    if (rank == 0)
+    {
+        printf("%10s: %lu (%.3f MBs)\n", "NX", NX, (float)NX * 4 / 1024 / 1024);
+        printf(">>> %5s %5s %9s %9s %9s %9s %9s %9s\n",
+               "rank", "step", "t3-t0", "(MB/s)", "t3-t1", "(MB/s)", "t3-t2", "(MB/s)");
+        fflush(stdout);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+
     for (int step = 0; step < NSTEPS; step++)
     {
-        std::cout << "Step:" << step << std::endl;
         for (int i = 0; i < NX; i++)
         {
             x[i] = step * NX * nproc * 1.0 + rank * NX * 1.0 + i;
         }
 
-        std::cout << "Writing ... " << std::endl;
         int64_t f;
+        double t[4];
+        t[0] = MPI_Wtime();
         adios_open(&f, "writer", outputfile, mode.c_str(), comm);
+        t[1] = MPI_Wtime();
         adios_write(f, "gnx", &gnx);
         adios_write(f, "nx", &NX);
         adios_write(f, "offs", &offs);
         adios_write(f, "x", x.data());
+        t[2] = MPI_Wtime();
         adios_close(f);
+        t[3] = MPI_Wtime();
+
+        double elap[3];
+        elap[0] = t[3] - t[0];
+        elap[1] = t[3] - t[1];
+        elap[2] = t[3] - t[2];
+
+        printf(">>> %5d %5d %9.03f %9.03e %9.03f %9.03e %9.03f %9.03e\n",
+               rank, step,
+               elap[0], (float)sizeof(int) * x.size() / elap[0] / 1024 / 1024,
+               elap[1], (float)sizeof(int) * x.size() / elap[1] / 1024 / 1024,
+               elap[2], (float)sizeof(int) * x.size() / elap[2] / 1024 / 1024);
+
+        double melap[3];
+        MPI_Reduce(elap, melap, 3, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+        if (rank == 0)
+        {
+
+            printf(">>> %5s %5d %9.03f %9.03e %9.03f %9.03e %9.03f %9.03e\n",
+                   "ALL", step,
+                   melap[0], (float)sizeof(int) * x.size() * nproc / melap[0] / 1024 / 1024,
+                   melap[1], (float)sizeof(int) * x.size() * nproc / melap[1] / 1024 / 1024,
+                   melap[2], (float)sizeof(int) * x.size() * nproc / melap[2] / 1024 / 1024);
+            fflush(stdout);
+        }
+        MPI_Barrier(MPI_COMM_WORLD);
 
         mode = "a";
+        sleep(3);
     }
 
     MPI_Barrier(comm);
