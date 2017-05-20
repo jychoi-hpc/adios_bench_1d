@@ -99,13 +99,13 @@ int main(int argc, char *argv[])
         for (int i=0; i<nproc; i++)
             printf("%10s: %5d %s\n", "MAP", i, &hostmap[i*MPI_MAX_PROCESSOR_NAME]);
         printf("===================\n\n");
-        printf(">>> %5s %9s %9s %9s %9s %9s %9s\n",
+        printf(">>> %5s %9s %12s %9s %12s %9s %12s\n",
                "rank", "t3-t0", "(MB/s)", "t3-t1", "(MB/s)", "t3-t2", "(MB/s)");
         fflush(stdout);
     }
     MPI_Barrier(MPI_COMM_WORLD);
     
-    printf(">>> %5d %9.03f %9.03f %9.03f %9.03f %9.03f %9.03f\n",
+    printf(">>> %5d %9.03f %12.03f %9.03f %12.03f %9.03f %12.03f\n",
             rank, 
             elap[0], (float)sizeof(int) * nsteps * readsize / elap[0] / 1024 / 1024,
             elap[1], (float)sizeof(int) * nsteps * readsize / elap[1] / 1024 / 1024,
@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
     if (rank == 0)
     {
 
-        printf(">>> %5s %9.03f %9.03f %9.03f %9.03f %9.03f %9.03f\n",
+        printf(">>> %5s %9.03f %12.03f %9.03f %12.03f %9.03f %12.03f\n",
                 "ALL", 
                 melap[0], (float)sizeof(int) * nsteps * gnx / melap[0] / 1024 / 1024,
                 melap[1], (float)sizeof(int) * nsteps * gnx / melap[1] / 1024 / 1024,

@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
         for (int i=0; i<nproc; i++)
             printf("%10s: %5d %s\n", "MAP", i, &hostmap[i*MPI_MAX_PROCESSOR_NAME]);
         printf("===================\n\n");
-        printf(">>> %5s %5s %9s %9s %9s %9s %9s %9s\n",
+        printf(">>> %5s %5s %9s %12s %9s %12s %9s %12s\n",
                "rank", "step", "t3-t0", "(MB/s)", "t3-t1", "(MB/s)", "t3-t2", "(MB/s)");
         fflush(stdout);
     }
@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
         elap[1] = t[3] - t[1];
         elap[2] = t[3] - t[2];
 
-        printf(">>> %5d %5d %9.03f %9.03f %9.03f %9.03f %9.03f %9.03f\n",
+        printf(">>> %5d %5d %9.03f %12.03f %9.03f %12.03f %9.03f %12.03f\n",
                rank, step,
                elap[0], (float)sizeof(int) * x.size() / elap[0] / 1024 / 1024,
                elap[1], (float)sizeof(int) * x.size() / elap[1] / 1024 / 1024,
@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
         if (rank == 0)
         {
 
-            printf(">>> %5s %5d %9.03f %9.03f %9.03f %9.03f %9.03f %9.03f\n",
+            printf(">>> %5s %5d %9.03f %12.03f %9.03f %12.03f %9.03f %12.03f\n",
                    "ALL", step,
                    melap[0], (float)sizeof(int) * x.size() * nproc / melap[0] / 1024 / 1024,
                    melap[1], (float)sizeof(int) * x.size() * nproc / melap[1] / 1024 / 1024,
