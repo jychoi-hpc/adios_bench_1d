@@ -27,11 +27,12 @@ int main(int argc, char *argv[])
         return 1;
     }
     const char *outputfile = argv[1];
-    const unsigned int NX = argc>2? atoi(argv[2]) : 10;
+    const unsigned long NX = argc>2? atol(argv[2]) : 10;
+    std::cout << "NX: " << NX << " (" << (float)NX*4/1024/1024 << " MB)" << std::endl;
 
     const int NSTEPS = 5;
-    const unsigned int gnx = NX*nproc;
-    const unsigned int offs = rank*NX;
+    const unsigned long gnx = NX*nproc;
+    const unsigned long offs = rank*NX;
 
     adios_init("writer.xml", comm);
 
@@ -40,11 +41,13 @@ int main(int argc, char *argv[])
 
     for (int step = 0; step < NSTEPS; step++)
     {
+        std::cout << "Step:" << step << std::endl;
         for (int i = 0; i < NX; i++)
         {
             x[i] = step * NX * nproc * 1.0 + rank * NX * 1.0 + i;
         }
 
+        std::cout << "Writing ... " << std::endl;
         int64_t f;
         adios_open(&f, "writer", outputfile, mode.c_str(), comm);
         adios_write(f, "gnx", &gnx);

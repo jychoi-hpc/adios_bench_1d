@@ -1,27 +1,18 @@
-<?xml version="1.0"?>
+<?xml version='1.0' encoding='utf-8'?>
 <adios-config host-language="C">
-  <adios-group name="writer" >
-    <var name="gnx"  type="unsigned integer"/>
-    <var name="offs" type="unsigned integer"/>
-    <var name="nx"   type="unsigned integer"/>
+  <adios-group name="writer">
+    <var name="gnx" type="unsigned long" />
+    <var name="offs" type="unsigned long" />
+    <var name="nx" type="unsigned long" />
 
     <global-bounds dimensions="gnx" offsets="offs">
-        <var name="x" type="integer" dimensions="nx"/>
+        <var dimensions="nx" name="x" type="integer" />
     </global-bounds>
 
   </adios-group>
 
-  <!-- Choose an output method for the above group. 
-       MPI: write 1 file, each process writes its own piece into the file
-       POSIX: write 1 file per process plus one metadata file
-       MPI_AGGREGATE: control the number of files
-       For distributed file systems (e.g. Summit NVRAM) use POSIX or MPI_AGGREGATE
-       with the "local-fs=1" option. 
-  -->
-  <transport group="writer" method="POSIX">local-fs=1</transport>
-  <!--
-  <transport group="writer" method="MPI"/>
-  <transport group="writer" method="MPI_AGGREGATE">num_aggregators=3;num_ost=3;local-fs=1</transport>
-  -->
+  
+  <transport group="writer" method="MPI">local-fs=1</transport>
+  
 
 </adios-config>
