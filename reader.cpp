@@ -14,6 +14,8 @@
 
 void printData(std::vector<int> x, int steps, uint64_t nelems,
         uint64_t offset, int rank);
+void summarizeData(std::vector<int> x, unsigned long gnx,  int steps, uint64_t nelems,
+        uint64_t offset, int rank);
 
 int main(int argc, char *argv[])
 {
@@ -125,7 +127,8 @@ int main(int argc, char *argv[])
     }
     MPI_Barrier(MPI_COMM_WORLD);
 
-    printData(x, nsteps, readsize, offset, rank);
+    //printData(x, nsteps, readsize, offset, rank);
+    summarizeData(x, gnx, nsteps, readsize, offset, rank);
     adios_free_varinfo(vgnx);
     adios_selection_delete(sel);
     adios_read_finalize_method(ADIOS_READ_METHOD_BP);
@@ -170,4 +173,30 @@ void printData(std::vector<int> x, int steps, uint64_t nelems,
         myfile << std::endl;
     }
     myfile.close();
+}
+
+void summarizeData(std::vector<int> x, unsigned long gnx,  int steps, uint64_t nelems,
+        uint64_t offset, int rank)
+{
+    for (int step = 0; step < steps; step++)
+    {
+        int ok = 1;
+        int i;
+        for (i = 0; i < nelems; i++)
+        {
+            if (x[step*nelems + i] != (int)(gnx*step + offset + i))
+            {
+                ok = 0;
+                break;
+            }
+        }
+        if (ok)
+        {
+            printf ("rank: %d step:%d ... PASS\n", rank, step);
+        }
+        else
+        {
+            printf ("rank: %d step:%d ... ERROR: %d %d\n", rank, step, x[step*nelems + i], (int)(gnx*step + offset + i));
+        }
+    }
 }
