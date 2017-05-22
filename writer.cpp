@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 
     for (int step = 0; step < NSTEPS; step++)
     {
-        for (int i = 0; i < NX; i++)
+        for (unsigned long i = 0; i < NX; i++)
         {
             x[i] = step * NX * nproc * 1.0 + rank * NX * 1.0 + i;
         }

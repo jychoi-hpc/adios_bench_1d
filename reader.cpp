@@ -155,10 +155,10 @@ void printData(std::vector<int> x, int steps, uint64_t nelems,
            << offset+nelems-1 << std::endl;
 
     myfile << "             ";
-    for (int j = 0; j < nelems; j++)
+    for (uint64_t j = 0; j < nelems; j++)
         myfile << std::setw(5) << offset + j;
     myfile << "\n-------------";
-    for (int j = 0; j < nelems; j++)
+    for (uint64_t j = 0; j < nelems; j++)
         myfile << "-----";
     myfile << std::endl;
 
@@ -166,7 +166,7 @@ void printData(std::vector<int> x, int steps, uint64_t nelems,
     for (int step = 0; step < steps; step++)
     {
         myfile << std::setw(5) << step << "        ";
-        for (int i = 0; i < nelems; i++)
+        for (uint64_t i = 0; i < nelems; i++)
         {
             myfile << std::setw(5) << x[step*nelems + i] << " ";
         }
@@ -181,7 +181,7 @@ void summarizeData(std::vector<int> x, unsigned long gnx,  int steps, uint64_t n
     for (int step = 0; step < steps; step++)
     {
         int ok = 1;
-        int i;
+        uint64_t i;
         for (i = 0; i < nelems; i++)
         {
             if (x[step*nelems + i] != (int)(gnx*step + offset + i))
