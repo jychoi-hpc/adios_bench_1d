@@ -11,6 +11,7 @@
 #include <vector>
 #include <mpi.h>
 #include <adios_read.h>
+#include <climits>
 
 void printData(std::vector<int> x, int steps, uint64_t nelems,
         uint64_t offset, int rank);
@@ -184,7 +185,7 @@ void summarizeData(std::vector<int> x, unsigned long gnx,  int steps, uint64_t n
         uint64_t i;
         for (i = 0; i < nelems; i++)
         {
-            if (x[step*nelems + i] != (int)(gnx*step + offset + i))
+            if (x[step*nelems + i] != (gnx*step + offset + i)%INT_MAX)
             {
                 ok = 0;
                 break;

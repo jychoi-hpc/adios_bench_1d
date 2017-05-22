@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <mpi.h>
 #include <adios.h>
+#include <climits>
 
 #define MAXTASKS 8192
 #define MAXNSTEP 1
@@ -71,7 +72,7 @@ int main(int argc, char *argv[])
     {
         for (unsigned long i = 0; i < NX; i++)
         {
-            x[i] = step * NX * nproc * 1.0 + rank * NX * 1.0 + i;
+            x[i] = (step * NX * nproc + rank * NX + i) % INT_MAX;
         }
 
         int64_t f;
