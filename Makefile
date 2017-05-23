@@ -12,12 +12,18 @@ default: writer reader
 all: default
 help: default
 
+.PHONE: ggo clean distclean
 
+ggo:
+	gengetopt --input=cmdline.ggo --no-handle-version
+
+%.o : %.c
+	${CC} -c $< 
 
 %.o : %.cpp 
 	${CXX} ${CXXFLAGS} ${ADIOS_INC} -c $< 
 
-writer: writer.o
+writer: writer.o cmdline.o
 	${CXX} ${LDFLAGS} -o writer $^ ${ADIOS_LIB} 
 
 reader: reader.o

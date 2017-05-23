@@ -10,12 +10,12 @@
 #include <iostream>
 #include <vector>
 #include <unistd.h>
+#include <climits>
 #include <mpi.h>
 #include <adios.h>
-#include <climits>
+#include "cmdline.h"
 
 #define MAXTASKS 8192
-#define MAXNSTEP 1
 
 int main(int argc, char *argv[])
 {
@@ -24,6 +24,10 @@ int main(int argc, char *argv[])
     int namelength;
     char host[MPI_MAX_PROCESSOR_NAME];
 
+    struct args_info ai;
+    if (cmdline_parser (argc, argv, &ai) != 0)
+        exit(1);
+    
     MPI_Init(&argc, &argv);
     MPI_Comm comm = MPI_COMM_WORLD;
     MPI_Comm_rank(comm, &rank);
@@ -35,20 +39,20 @@ int main(int argc, char *argv[])
     MPI_Gather(&host, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, hostmap,
              MPI_MAX_PROCESSOR_NAME, MPI_CHAR, 0, MPI_COMM_WORLD);
 
-    if (argc < 2)
-    {
-        std::cout << "Not enough arguments: need an input file" << std::endl;
-        std::cout << "Usage: writer filename [NX]" << std::endl;
-        return 1;
-    }
-    const char *outputfile = argv[1];
-    const unsigned long NX = argc > 2 ? atol(argv[2]) : 10;
-
-    const int NSTEPS = MAXNSTEP;
+    const unsigned long NX = ai.len_arg;
+    const int NSTEPS = ai.nstep_arg;
     const unsigned long gnx = NX * nproc;
     const unsigned long offs = rank * NX;
 
-    adios_init("writer.xml", comm);
+    adios_init_noxml(comm);
+
+    int64_t       m_adios_group;
+    adios_declare_group (&m_adios_group, "writer", "", adios_stat_no);
+    adios_define_var (m_adios_group, "gnx", "", adios_unsigned_long, 0, 0, 0);
+    adios_define_var (m_adios_group, "offs", "", adios_unsigned_long, 0, 0, 0);
+    adios_define_var (m_adios_group, "nx", "", adios_unsigned_long, 0, 0, 0);
+    adios_define_var (m_adios_group, "x", "", adios_integer, "nx", "gnx", "offs");
+    adios_select_method (m_adios_group, ai.writemethod_arg, ai.wparams_arg, "");
 
     std::vector<int> x(NX);
     std::string mode = "w";
@@ -59,6 +63,8 @@ int main(int argc, char *argv[])
         printf("%10s: %lu\n", "NX", NX);
         printf("%10s: %d\n", "Total NPs", nproc);
         printf("%10s: %.3f\n", "MBs/proc", (float) sizeof(int)*NX/1024/1024);
+        printf("%10s: %s\n", "Method", ai.writemethod_arg);
+        printf("%10s: %s\n", "Params", ai.wparams_arg);
         for (int i=0; i<nproc; i++)
             printf("%10s: %5d %s\n", "MAP", i, &hostmap[i*MPI_MAX_PROCESSOR_NAME]);
         printf("===================\n\n");
@@ -80,7 +86,7 @@ int main(int argc, char *argv[])
 
         MPI_Barrier(comm);
         t[0] = MPI_Wtime();
-        adios_open(&f, "writer", outputfile, mode.c_str(), comm);
+        adios_open(&f, "writer", ai.filename_arg, mode.c_str(), comm);
         t[1] = MPI_Wtime();
         adios_write(f, "gnx", &gnx);
         adios_write(f, "nx", &NX);
@@ -115,8 +121,8 @@ int main(int argc, char *argv[])
         }
         MPI_Barrier(MPI_COMM_WORLD);
 
-        mode = "a";
-        sleep(3);
+        if (ai.append_flag) mode = "a";
+        sleep(ai.sleep_arg);
     }
 
     MPI_Barrier(comm);
