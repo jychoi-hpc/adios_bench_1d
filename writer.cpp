@@ -24,9 +24,16 @@ int main(int argc, char *argv[])
     int namelength;
     char host[MPI_MAX_PROCESSOR_NAME];
 
-    struct args_info ai;
-    if (cmdline_parser (argc, argv, &ai) != 0)
+    gengetopt_args_info args_info;
+    if (cmdline_parser (argc, argv, &args_info) != 0)
         exit(1);
+
+    if (args_info.inputs_num < 1)
+    {
+        cmdline_parser_print_help();
+        exit(1);
+    }
+    const char *outputfile = args_info.inputs[0];
     
     MPI_Init(&argc, &argv);
     MPI_Comm comm = MPI_COMM_WORLD;
@@ -39,8 +46,8 @@ int main(int argc, char *argv[])
     MPI_Gather(&host, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, hostmap,
              MPI_MAX_PROCESSOR_NAME, MPI_CHAR, 0, MPI_COMM_WORLD);
 
-    const unsigned long NX = ai.len_arg;
-    const int NSTEPS = ai.nstep_arg;
+    const unsigned long NX = args_info.len_arg;
+    const int NSTEPS = args_info.nstep_arg;
     const unsigned long gnx = NX * nproc;
     const unsigned long offs = rank * NX;
 
@@ -52,7 +59,7 @@ int main(int argc, char *argv[])
     adios_define_var (m_adios_group, "offs", "", adios_unsigned_long, 0, 0, 0);
     adios_define_var (m_adios_group, "nx", "", adios_unsigned_long, 0, 0, 0);
     adios_define_var (m_adios_group, "x", "", adios_integer, "nx", "gnx", "offs");
-    adios_select_method (m_adios_group, ai.writemethod_arg, ai.wparams_arg, "");
+    adios_select_method (m_adios_group, args_info.writemethod_arg, args_info.wparams_arg, "");
 
     std::vector<int> x(NX);
     std::string mode = "w";
@@ -63,8 +70,8 @@ int main(int argc, char *argv[])
         printf("%10s: %lu\n", "NX", NX);
         printf("%10s: %d\n", "Total NPs", nproc);
         printf("%10s: %.3f\n", "MBs/proc", (float) sizeof(int)*NX/1024/1024);
-        printf("%10s: %s\n", "Method", ai.writemethod_arg);
-        printf("%10s: %s\n", "Params", ai.wparams_arg);
+        printf("%10s: %s\n", "Method", args_info.writemethod_arg);
+        printf("%10s: %s\n", "Params", args_info.wparams_arg);
         for (int i=0; i<nproc; i++)
             printf("%10s: %5d %s\n", "MAP", i, &hostmap[i*MPI_MAX_PROCESSOR_NAME]);
         printf("===================\n\n");
@@ -86,7 +93,7 @@ int main(int argc, char *argv[])
 
         MPI_Barrier(comm);
         t[0] = MPI_Wtime();
-        adios_open(&f, "writer", ai.filename_arg, mode.c_str(), comm);
+        adios_open(&f, "writer", outputfile, mode.c_str(), comm);
         t[1] = MPI_Wtime();
         adios_write(f, "gnx", &gnx);
         adios_write(f, "nx", &NX);
@@ -121,8 +128,8 @@ int main(int argc, char *argv[])
         }
         MPI_Barrier(MPI_COMM_WORLD);
 
-        if (ai.append_flag) mode = "a";
-        sleep(ai.sleep_arg);
+        if (args_info.append_flag) mode = "a";
+        sleep(args_info.sleep_arg);
     }
 
     MPI_Barrier(comm);

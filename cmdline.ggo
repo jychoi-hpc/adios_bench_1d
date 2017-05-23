@@ -2,9 +2,8 @@
 package "writer"
 version "0.1"
 
-args "--func-name=cmdline_parser --file=cmdline --arg-struct-name=args_info"
+args "--file=cmdline --unamed-opts=FILE"
 
-option "filename" f "output filename" string optional default="out.bp"
 option "writemethod" w "ADIOS write method" string optional default="POSIX"
 option "wparams" - "write method params" string optional default="local-fs=1;have_metadata_file=1"
 option "len" n "array length" long optional default="1000"
