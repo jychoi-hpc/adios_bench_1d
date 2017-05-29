@@ -16,7 +16,9 @@
 #include <mpi.h>
 #include <adios.h>
 #include <libgen.h>
+#ifdef USE_CORI
 #include <pmi.h>
+#endif
 
 #include "cmdline.h"
 
@@ -59,7 +61,7 @@ int main(int argc, char *argv[])
     const unsigned long gnx = NX * nproc;
     const unsigned long offs = rank * NX;
 
-#ifdef ON_CORI
+#ifdef USE_CORI
     // Use PMI and do comm split along with tree structure
     int prank;
     int nid = -1;
@@ -90,12 +92,19 @@ int main(int argc, char *argv[])
 
         if (args_info.treelevel_arg > 2)
         {
+            MPI_Comm_split(mesh_y_comm, (int)xyz.mesh_z/8, rank, &mesh_z_comm);
+            comm = mesh_z_comm;
+            treelevel_ss << "-" << xyz.mesh_z/8;
+        }
+
+        if (args_info.treelevel_arg > 3)
+        {
             MPI_Comm_split(mesh_y_comm, (int)xyz.mesh_z, rank, &mesh_z_comm);
             comm = mesh_z_comm;
             treelevel_ss << "-" << xyz.mesh_z;
         }
 
-        outputfile = outputfile + "." + treelevel_ss.str() + ".bp";
+        outputfile = outputfile + "-" + treelevel_ss.str() + ".bp";
     }
 #endif
 

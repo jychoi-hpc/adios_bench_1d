@@ -16,7 +16,7 @@ endif
 ifneq (,$(findstring cori, $(SYSTEMS)))
   CC = cc
   CXX = CC
-  CXXFLAGS += -DON_CORI
+  CXXFLAGS += -DUSE_CORI
 endif
 
 default: writer reader
