@@ -16,6 +16,7 @@
 #include <mpi.h>
 #include <adios.h>
 #include <libgen.h>
+#include <pmi.h>
 
 #include "cmdline.h"
 

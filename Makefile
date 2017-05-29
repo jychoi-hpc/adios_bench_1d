@@ -1,11 +1,23 @@
-CXX=mpicxx
+CXX = mpicxx
 #OMPI_CXX=g++-5 
-CXXFLAGS=-g -std=c++11
-LDFLAGS=-g
+CXXFLAGS = -g -std=c++11
+LDFLAGS = -g
 
 ## Set ADIOS_DIR here or before doing make
 ADIOS_INC=$(shell adios_config -c)
 ADIOS_LIB=$(shell adios_config -l)
+
+ifneq (,${HOST})
+  SYSTEMS := ${HOST}
+else
+  SYSTEMS := $(shell hostname)
+endif
+
+ifneq (,$(findstring cori, $(SYSTEMS)))
+  CC = cc
+  CXX = CC
+  CXXFLAGS += -DON_CORI
+endif
 
 default: writer reader
 
