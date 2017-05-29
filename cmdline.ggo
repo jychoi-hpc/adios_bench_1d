@@ -10,3 +10,4 @@ option "len" n "array length" long optional default="1000"
 option "nstep" - "number of time steps" int optional default="1"
 option "sleep" - "interval time" int optional default="3"
 option "append" - "append" flag off
+option "treelevel" - "treelevel" int optional default="0"
