@@ -59,6 +59,8 @@ struct gengetopt_args_info
   int treelevel_arg;	/**< @brief treelevel (default='0').  */
   char * treelevel_orig;	/**< @brief treelevel original value given at command line.  */
   const char *treelevel_help; /**< @brief treelevel help description.  */
+  int sync_flag;	/**< @brief sync (default=off).  */
+  const char *sync_help; /**< @brief sync help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
@@ -69,6 +71,7 @@ struct gengetopt_args_info
   unsigned int sleep_given ;	/**< @brief Whether sleep was given.  */
   unsigned int append_given ;	/**< @brief Whether append was given.  */
   unsigned int treelevel_given ;	/**< @brief Whether treelevel was given.  */
+  unsigned int sync_given ;	/**< @brief Whether sync was given.  */
 
   char **inputs ; /**< @brief unamed options (options without names) */
   unsigned inputs_num ; /**< @brief unamed options number */
