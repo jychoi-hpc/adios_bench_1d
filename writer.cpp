@@ -62,21 +62,34 @@ int main(int argc, char *argv[])
     const unsigned long offs = rank * NX;
 
 #ifdef USE_CORI
+    FILE *cfile;
+    char cname[20];
+    cfile = fopen("/proc/cray_xt/cname", "r");
+    fscanf(cfile, "%s", cname);
+    fclose(cfile);
+
+    int row, col, chassis, slot, node;
+    sscanf(cname, "c%d-%dc%ds%dn%d", &row, &col, &chassis, &slot, &node);
     // Use PMI and do comm split along with tree structure
     int prank;
     int nid = -1;
     pmi_mesh_coord_t xyz;
     stringstream treelevel_ss;
 
+    // treelevel 1: X
+    // treelevel 2: Y
+    // treelevel 3: Z
+    // treelevel 4: N
+    // treelevel 5: 1 file per PE
     if (args_info.treelevel_arg > 0)
     {
         PMI_Get_rank(&prank);
         PMI_Get_nid(prank, &nid);
         PMI_Get_meshcoord((pmi_nid_t)nid, &xyz);
-        printf(">>> PMI rank, nid, x, y, z = %d %d %u %u %u\n",
-               prank, nid, xyz.mesh_x, xyz.mesh_y, xyz.mesh_z);
+        printf(">>> PMI rank, nid, cname, x, y, z, n = %d %d %s %u %u %u %d\n",
+               prank, nid, cname, xyz.mesh_x, xyz.mesh_y, xyz.mesh_z, node);
 
-        MPI_Comm mesh_x_comm, mesh_y_comm, mesh_z_comm;
+        MPI_Comm mesh_x_comm, mesh_y_comm, mesh_z_comm, mesh_n_comm, mesh_one_comm;
         int mesh_x_rank, mesh_y_rank, mesh_z_rank;
 
         MPI_Comm_split(MPI_COMM_WORLD, (int)xyz.mesh_x, rank, &mesh_x_comm);
@@ -92,16 +105,23 @@ int main(int argc, char *argv[])
 
         if (args_info.treelevel_arg > 2)
         {
-            MPI_Comm_split(mesh_y_comm, (int)xyz.mesh_z/8, rank, &mesh_z_comm);
+            MPI_Comm_split(mesh_y_comm, (int)xyz.mesh_z, rank, &mesh_z_comm);
             comm = mesh_z_comm;
-            treelevel_ss << "-" << xyz.mesh_z/8;
+            treelevel_ss << "-" << xyz.mesh_z;
         }
 
         if (args_info.treelevel_arg > 3)
         {
-            MPI_Comm_split(mesh_y_comm, (int)xyz.mesh_z, rank, &mesh_z_comm);
-            comm = mesh_z_comm;
-            treelevel_ss << "-" << xyz.mesh_z;
+            MPI_Comm_split(mesh_z_comm, node, rank, &mesh_n_comm);
+            comm = mesh_n_comm;
+            treelevel_ss << "-" << node;
+        }
+
+        if (args_info.treelevel_arg > 4)
+        {
+            MPI_Comm_split(mesh_n_comm, rank, rank, &mesh_one_comm);
+            comm = mesh_one_comm;
+            treelevel_ss << "-" << rank;
         }
 
         outputfile = outputfile + "-" + treelevel_ss.str() + ".bp";
