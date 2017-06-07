@@ -57,6 +57,8 @@ int main(int argc, char *argv[])
         }
     }
 
+    float timeout_sec = args_info.timeout_arg;
+
     MPI_Init(&argc, &argv);
     MPI_Comm comm = MPI_COMM_WORLD;
     MPI_Comm_rank(comm, &rank);
@@ -75,7 +77,13 @@ int main(int argc, char *argv[])
 
     MPI_Barrier(comm);
     t[0] = MPI_Wtime();
-    f = adios_read_open_file(inputfile, adios_read_method, comm);
+
+    if (args_info.stream_flag)
+        f = adios_read_open(inputfile, adios_read_method, comm,
+                            ADIOS_LOCKMODE_ALL, timeout_sec);
+    else
+        f = adios_read_open_file(inputfile, adios_read_method, comm);
+    
     if (f == NULL)
     {
         std::cout << adios_errmsg() << std::endl;

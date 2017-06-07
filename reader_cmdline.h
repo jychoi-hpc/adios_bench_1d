@@ -45,11 +45,18 @@ struct gengetopt_args_info
   char * rparams_arg;	/**< @brief write method params (default='verbose=3').  */
   char * rparams_orig;	/**< @brief write method params original value given at command line.  */
   const char *rparams_help; /**< @brief write method params help description.  */
+  float timeout_arg;	/**< @brief Timeout (default='3600').  */
+  char * timeout_orig;	/**< @brief Timeout original value given at command line.  */
+  const char *timeout_help; /**< @brief Timeout help description.  */
+  int stream_flag;	/**< @brief Stream read (default=off).  */
+  const char *stream_help; /**< @brief Stream read help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
   unsigned int readmethod_given ;	/**< @brief Whether readmethod was given.  */
   unsigned int rparams_given ;	/**< @brief Whether rparams was given.  */
+  unsigned int timeout_given ;	/**< @brief Whether timeout was given.  */
+  unsigned int stream_given ;	/**< @brief Whether stream was given.  */
 
   char **inputs ; /**< @brief unamed options (options without names) */
   unsigned inputs_num ; /**< @brief unamed options number */

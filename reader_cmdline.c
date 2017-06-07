@@ -38,11 +38,15 @@ const char *gengetopt_args_info_help[] = {
   "  -V, --version            Print version and exit",
   "  -w, --readmethod=STRING  ADIOS read method  (default=`BP')",
   "      --rparams=STRING     write method params  (default=`verbose=3')",
+  "      --timeout=FLOAT      Timeout  (default=`3600')",
+  "      --stream             Stream read  (default=off)",
     0
 };
 
 typedef enum {ARG_NO
+  , ARG_FLAG
   , ARG_STRING
+  , ARG_FLOAT
 } cmdline_parser_arg_type;
 
 static
@@ -65,6 +69,8 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->version_given = 0 ;
   args_info->readmethod_given = 0 ;
   args_info->rparams_given = 0 ;
+  args_info->timeout_given = 0 ;
+  args_info->stream_given = 0 ;
 }
 
 static
@@ -75,6 +81,9 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->readmethod_orig = NULL;
   args_info->rparams_arg = gengetopt_strdup ("verbose=3");
   args_info->rparams_orig = NULL;
+  args_info->timeout_arg = 3600;
+  args_info->timeout_orig = NULL;
+  args_info->stream_flag = 0;
   
 }
 
@@ -87,6 +96,8 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->version_help = gengetopt_args_info_help[1] ;
   args_info->readmethod_help = gengetopt_args_info_help[2] ;
   args_info->rparams_help = gengetopt_args_info_help[3] ;
+  args_info->timeout_help = gengetopt_args_info_help[4] ;
+  args_info->stream_help = gengetopt_args_info_help[5] ;
   
 }
 
@@ -177,6 +188,7 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->readmethod_orig));
   free_string_field (&(args_info->rparams_arg));
   free_string_field (&(args_info->rparams_orig));
+  free_string_field (&(args_info->timeout_orig));
   
   
   for (i = 0; i < args_info->inputs_num; ++i)
@@ -220,6 +232,10 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "readmethod", args_info->readmethod_orig, 0);
   if (args_info->rparams_given)
     write_into_file(outfile, "rparams", args_info->rparams_orig, 0);
+  if (args_info->timeout_given)
+    write_into_file(outfile, "timeout", args_info->timeout_orig, 0);
+  if (args_info->stream_given)
+    write_into_file(outfile, "stream", 0, 0 );
   
 
   i = EXIT_SUCCESS;
@@ -386,6 +402,12 @@ int update_arg(void *field, char **orig_field,
     val = possible_values[found];
 
   switch(arg_type) {
+  case ARG_FLAG:
+    *((int *)field) = !*((int *)field);
+    break;
+  case ARG_FLOAT:
+    if (val) *((float *)field) = (float)strtod (val, &stop_char);
+    break;
   case ARG_STRING:
     if (val) {
       string_field = (char **)field;
@@ -398,10 +420,22 @@ int update_arg(void *field, char **orig_field,
     break;
   };
 
+  /* check numeric conversion */
+  switch(arg_type) {
+  case ARG_FLOAT:
+    if (val && !(stop_char && *stop_char == '\0')) {
+      fprintf(stderr, "%s: invalid numeric value: %s\n", package_name, val);
+      return 1; /* failure */
+    }
+    break;
+  default:
+    ;
+  };
 
   /* store the original value */
   switch(arg_type) {
   case ARG_NO:
+  case ARG_FLAG:
     break;
   default:
     if (value && orig_field) {
@@ -460,6 +494,8 @@ cmdline_parser_internal (
         { "version",	0, NULL, 'V' },
         { "readmethod",	1, NULL, 'w' },
         { "rparams",	1, NULL, 0 },
+        { "timeout",	1, NULL, 0 },
+        { "stream",	0, NULL, 0 },
         { 0,  0, 0, 0 }
       };
 
@@ -512,6 +548,32 @@ cmdline_parser_internal (
                 &(local_args_info.rparams_given), optarg, 0, "verbose=3", ARG_STRING,
                 check_ambiguity, override, 0, 0,
                 "rparams", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Timeout.  */
+          else if (strcmp (long_options[option_index].name, "timeout") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->timeout_arg), 
+                 &(args_info->timeout_orig), &(args_info->timeout_given),
+                &(local_args_info.timeout_given), optarg, 0, "3600", ARG_FLOAT,
+                check_ambiguity, override, 0, 0,
+                "timeout", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Stream read.  */
+          else if (strcmp (long_options[option_index].name, "stream") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->stream_flag), 0, &(args_info->stream_given),
+                &(local_args_info.stream_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "stream", '-',
                 additional_error))
               goto failure;
           

@@ -6,3 +6,5 @@ args "--file=reader_cmdline --unamed-opts=FILE"
 
 option "readmethod" w "ADIOS read method" string optional default="BP"
 option "rparams" - "write method params" string optional default="verbose=3"
+option "timeout" - "Timeout" float optional default="3600"
+option "stream" - "Stream read" flag off
