@@ -13,7 +13,7 @@
 #include <climits>
 #include <mpi.h>
 #include <adios.h>
-#include "cmdline.h"
+#include "writer_cmdline.h"
 
 #define MAXTASKS 8192
 

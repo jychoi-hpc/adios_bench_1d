@@ -12,6 +12,9 @@
 #include <mpi.h>
 #include <adios_read.h>
 #include <climits>
+#include "reader_cmdline.h"
+
+using namespace std;
 
 void printData(std::vector<int> x, int steps, uint64_t nelems,
         uint64_t offset, int rank);
@@ -25,6 +28,35 @@ int main(int argc, char *argv[])
     int namelength;
     char host[MPI_MAX_PROCESSOR_NAME];
 
+    gengetopt_args_info args_info;
+    if (cmdline_parser (argc, argv, &args_info) != 0)
+        exit(1);
+
+    if (args_info.inputs_num < 1)
+    {
+        cmdline_parser_print_help();
+        exit(1);
+    }
+    const char *inputfile = args_info.inputs[0];
+
+    enum ADIOS_READ_METHOD adios_read_method = ADIOS_READ_METHOD_BP;
+    if (args_info.readmethod_given)
+    {
+        if (string(args_info.readmethod_arg) == "BP") {
+            adios_read_method = ADIOS_READ_METHOD_BP;
+        } else if (string(args_info.readmethod_arg) == "ICEE") {
+            adios_read_method = ADIOS_READ_METHOD_ICEE;
+        } else if (string(args_info.readmethod_arg) == "DIMES") {
+            adios_read_method = ADIOS_READ_METHOD_DIMES;
+        } else if (string(args_info.readmethod_arg) == "DATASPACES") {
+            adios_read_method = ADIOS_READ_METHOD_DATASPACES;
+        } else if (string(args_info.readmethod_arg) == "FLEXPATH") {
+            adios_read_method = ADIOS_READ_METHOD_FLEXPATH;
+        } else {
+            fprintf(stderr, "Unknown read method: %s\n", args_info.readmethod_arg);
+        }
+    }
+
     MPI_Init(&argc, &argv);
     MPI_Comm comm = MPI_COMM_WORLD;
     MPI_Comm_rank(comm, &rank);
@@ -36,21 +68,14 @@ int main(int argc, char *argv[])
     MPI_Gather(&host, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, hostmap,
              MPI_MAX_PROCESSOR_NAME, MPI_CHAR, 0, MPI_COMM_WORLD);
 
-    if (argc < 2)
-    {
-        std::cout << "Not enough arguments: need an input file\n";
-        return 1;
-    }
-    const char *inputfile = argv[1];
-
-    adios_read_init_method(ADIOS_READ_METHOD_BP, comm, "verbose=3");
+    adios_read_init_method(adios_read_method, comm, args_info.rparams_arg);
 
     ADIOS_FILE *f;
     double t[5];
 
     MPI_Barrier(comm);
     t[0] = MPI_Wtime();
-    f = adios_read_open_file(inputfile, ADIOS_READ_METHOD_BP, comm);
+    f = adios_read_open_file(inputfile, adios_read_method, comm);
     if (f == NULL)
     {
         std::cout << adios_errmsg() << std::endl;
@@ -132,7 +157,7 @@ int main(int argc, char *argv[])
     summarizeData(x, gnx, nsteps, readsize, offset, rank);
     adios_free_varinfo(vgnx);
     adios_selection_delete(sel);
-    adios_read_finalize_method(ADIOS_READ_METHOD_BP);
+    adios_read_finalize_method(adios_read_method);
     MPI_Barrier(comm);
     MPI_Finalize();
     return 0;

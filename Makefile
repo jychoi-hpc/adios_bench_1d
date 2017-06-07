@@ -15,7 +15,8 @@ help: default
 .PHONE: ggo clean distclean
 
 ggo:
-	gengetopt --input=cmdline.ggo --no-handle-version
+	gengetopt --input=writer_cmdline.ggo --no-handle-version
+	gengetopt --input=reader_cmdline.ggo --no-handle-version
 
 %.o : %.c
 	${CC} -c $< 
@@ -23,10 +24,10 @@ ggo:
 %.o : %.cpp 
 	${CXX} ${CXXFLAGS} ${ADIOS_INC} -c $< 
 
-writer: writer.o cmdline.o
+writer: writer.o writer_cmdline.o
 	${CXX} ${LDFLAGS} -o writer $^ ${ADIOS_LIB} 
 
-reader: reader.o
+reader: reader.o reader_cmdline.o
 	${CXX} ${LDFLAGS} -o reader $^ ${ADIOS_LIB} 
 
 clean:
