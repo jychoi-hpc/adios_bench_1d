@@ -1,0 +1,8 @@
+# 
+package "reader"
+version "0.1"
+
+args "--file=reader_cmdline --unamed-opts=FILE"
+
+option "readmethod" w "ADIOS read method" string optional default="BP"
+option "rparams" - "write method params" string optional default="verbose=3"
