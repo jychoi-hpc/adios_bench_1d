@@ -44,6 +44,7 @@ const char *gengetopt_args_info_help[] = {
   "      --append              append  (default=off)",
   "      --treelevel=INT       treelevel  (default=`0')",
   "      --sync                sync  (default=off)",
+  "      --groupfile=STRING    groupfile",
     0
 };
 
@@ -80,6 +81,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->append_given = 0 ;
   args_info->treelevel_given = 0 ;
   args_info->sync_given = 0 ;
+  args_info->groupfile_given = 0 ;
 }
 
 static
@@ -100,6 +102,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->treelevel_arg = 0;
   args_info->treelevel_orig = NULL;
   args_info->sync_flag = 0;
+  args_info->groupfile_arg = NULL;
+  args_info->groupfile_orig = NULL;
   
 }
 
@@ -118,6 +122,7 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->append_help = gengetopt_args_info_help[7] ;
   args_info->treelevel_help = gengetopt_args_info_help[8] ;
   args_info->sync_help = gengetopt_args_info_help[9] ;
+  args_info->groupfile_help = gengetopt_args_info_help[10] ;
   
 }
 
@@ -212,6 +217,8 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->nstep_orig));
   free_string_field (&(args_info->sleep_orig));
   free_string_field (&(args_info->treelevel_orig));
+  free_string_field (&(args_info->groupfile_arg));
+  free_string_field (&(args_info->groupfile_orig));
   
   
   for (i = 0; i < args_info->inputs_num; ++i)
@@ -267,6 +274,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "treelevel", args_info->treelevel_orig, 0);
   if (args_info->sync_given)
     write_into_file(outfile, "sync", 0, 0 );
+  if (args_info->groupfile_given)
+    write_into_file(outfile, "groupfile", args_info->groupfile_orig, 0);
   
 
   i = EXIT_SUCCESS;
@@ -535,6 +544,7 @@ cmdline_parser_internal (
         { "append",	0, NULL, 0 },
         { "treelevel",	1, NULL, 0 },
         { "sync",	0, NULL, 0 },
+        { "groupfile",	1, NULL, 0 },
         { 0,  0, 0, 0 }
       };
 
@@ -665,6 +675,20 @@ cmdline_parser_internal (
             if (update_arg((void *)&(args_info->sync_flag), 0, &(args_info->sync_given),
                 &(local_args_info.sync_given), optarg, 0, 0, ARG_FLAG,
                 check_ambiguity, override, 1, 0, "sync", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* groupfile.  */
+          else if (strcmp (long_options[option_index].name, "groupfile") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->groupfile_arg), 
+                 &(args_info->groupfile_orig), &(args_info->groupfile_given),
+                &(local_args_info.groupfile_given), optarg, 0, 0, ARG_STRING,
+                check_ambiguity, override, 0, 0,
+                "groupfile", '-',
                 additional_error))
               goto failure;
           

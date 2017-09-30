@@ -61,6 +61,9 @@ struct gengetopt_args_info
   const char *treelevel_help; /**< @brief treelevel help description.  */
   int sync_flag;	/**< @brief sync (default=off).  */
   const char *sync_help; /**< @brief sync help description.  */
+  char * groupfile_arg;	/**< @brief groupfile.  */
+  char * groupfile_orig;	/**< @brief groupfile original value given at command line.  */
+  const char *groupfile_help; /**< @brief groupfile help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
@@ -72,6 +75,7 @@ struct gengetopt_args_info
   unsigned int append_given ;	/**< @brief Whether append was given.  */
   unsigned int treelevel_given ;	/**< @brief Whether treelevel was given.  */
   unsigned int sync_given ;	/**< @brief Whether sync was given.  */
+  unsigned int groupfile_given ;	/**< @brief Whether groupfile was given.  */
 
   char **inputs ; /**< @brief unamed options (options without names) */
   unsigned inputs_num ; /**< @brief unamed options number */

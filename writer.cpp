@@ -11,11 +11,13 @@
 #include <vector>
 #include <climits>
 #include <sstream>
+#include <fstream>
 
 #include <unistd.h>
 #include <mpi.h>
 #include <adios.h>
 #include <libgen.h>
+#include <assert.h>
 #ifdef USE_CORI
 #include <pmi.h>
 #endif
@@ -25,6 +27,25 @@
 #define MAXTASKS 8192
 
 using namespace std;
+
+int read_int (const char *fname, std::vector<int>& arr)
+{
+  string line;
+  ifstream f(fname);
+  if (f.is_open())
+  {
+    while (getline(f, line))
+    {
+      arr.push_back(atoi(line.c_str()));
+    }
+    f.close();
+  }
+  else
+  {
+    cout << "Unable to open file";
+  }
+  return (arr.size());
+}
 
 int main(int argc, char *argv[])
 {
@@ -70,11 +91,6 @@ int main(int argc, char *argv[])
 
     int row, col, chassis, slot, node;
     sscanf(cname, "c%d-%dc%ds%dn%d", &row, &col, &chassis, &slot, &node);
-    // Use PMI and do comm split along with tree structure
-    int prank;
-    int nid = -1;
-    pmi_mesh_coord_t xyz;
-    stringstream treelevel_ss;
 
     // treelevel 1: X
     // treelevel 2: Y
@@ -83,6 +99,12 @@ int main(int argc, char *argv[])
     // treelevel 5: 1 file per PE
     if (args_info.treelevel_arg > 0)
     {
+        // Use PMI and do comm split along with tree structure
+        int prank;
+        int nid = -1;
+        pmi_mesh_coord_t xyz;
+        stringstream treelevel_ss;
+
         PMI_Get_rank(&prank);
         PMI_Get_nid(prank, &nid);
         PMI_Get_meshcoord((pmi_nid_t)nid, &xyz);
@@ -127,6 +149,18 @@ int main(int argc, char *argv[])
         outputfile = outputfile + "-" + treelevel_ss.str() + ".bp";
     }
 #endif
+
+    if (args_info.groupfile_given) 
+    {
+        stringstream ss;
+        std::vector<int> gid;
+        read_int(args_info.groupfile_arg, gid);
+        assert(gid.size() == nproc);
+        printf(">>> rank, gid = %d %d\n", rank, gid[rank]);
+        MPI_Comm_split(MPI_COMM_WORLD, gid[rank], rank, &comm);
+        ss << gid[rank];
+        outputfile = outputfile + "-" + ss.str() + ".bp";
+    }
 
     adios_init_noxml(MPI_COMM_WORLD);
 

@@ -12,3 +12,4 @@ option "sleep" - "interval time" int optional default="3"
 option "append" - "append" flag off
 option "treelevel" - "treelevel" int optional default="0"
 option "sync" - "sync" flag off
+option "groupfile" - "groupfile" string optional
