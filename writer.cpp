@@ -92,10 +92,11 @@ int main(int argc, char *argv[])
     int row, col, chassis, slot, node;
     sscanf(cname, "c%d-%dc%ds%dn%d", &row, &col, &chassis, &slot, &node);
 
-    // treelevel 1: X
-    // treelevel 2: Y
-    // treelevel 3: Z
-    // treelevel 4: N
+    // treelevel 0: no aggregation
+    // treelevel 1: X (cabinet level)
+    // treelevel 2: Y (chassis level)
+    // treelevel 3: Z (blade level)
+    // treelevel 4: N (node level)
     // treelevel 5: 1 file per PE
     if (args_info.treelevel_arg > 0)
     {
@@ -150,6 +151,7 @@ int main(int argc, char *argv[])
     }
 #endif
 
+    // Use custom group
     if (args_info.groupfile_given) 
     {
         stringstream ss;
