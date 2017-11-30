@@ -13,7 +13,11 @@ NR==1 {
     ssm += $1*$1
 }
 END {
-    avg = sum/NR
-    print ">>> state:", min, max, avg, sqrt(ssm/NR-avg*avg)
+    if (NR>0) {
+        avg = sum/NR
+        print ">>> stat:", NR, min, max, avg, sqrt(ssm/NR-avg*avg)
+    } else {
+        print ""
+    }
 }
 
