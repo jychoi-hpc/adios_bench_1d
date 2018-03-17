@@ -214,8 +214,8 @@ int main(int argc, char *argv[])
         adios_write(f, "x", x.data());
         t[2] = MPI_Wtime();
         adios_close(f);
-        if (args_info.sync_flag) sync();
         t[3] = MPI_Wtime();
+        if (!args_info.nosync_flag) sync();
 
         double elap[3];
         elap[0] = t[3] - t[0];

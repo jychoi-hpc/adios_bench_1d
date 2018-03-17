@@ -43,7 +43,7 @@ const char *gengetopt_args_info_help[] = {
   "      --sleep=INT           interval time  (default=`3')",
   "      --append              append  (default=off)",
   "      --treelevel=INT       treelevel  (default=`0')",
-  "      --sync                sync  (default=off)",
+  "      --nosync              nosync  (default=off)",
   "      --groupfile=STRING    groupfile",
     0
 };
@@ -80,7 +80,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->sleep_given = 0 ;
   args_info->append_given = 0 ;
   args_info->treelevel_given = 0 ;
-  args_info->sync_given = 0 ;
+  args_info->nosync_given = 0 ;
   args_info->groupfile_given = 0 ;
 }
 
@@ -101,7 +101,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->append_flag = 0;
   args_info->treelevel_arg = 0;
   args_info->treelevel_orig = NULL;
-  args_info->sync_flag = 0;
+  args_info->nosync_flag = 0;
   args_info->groupfile_arg = NULL;
   args_info->groupfile_orig = NULL;
   
@@ -121,7 +121,7 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->sleep_help = gengetopt_args_info_help[6] ;
   args_info->append_help = gengetopt_args_info_help[7] ;
   args_info->treelevel_help = gengetopt_args_info_help[8] ;
-  args_info->sync_help = gengetopt_args_info_help[9] ;
+  args_info->nosync_help = gengetopt_args_info_help[9] ;
   args_info->groupfile_help = gengetopt_args_info_help[10] ;
   
 }
@@ -272,8 +272,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "append", 0, 0 );
   if (args_info->treelevel_given)
     write_into_file(outfile, "treelevel", args_info->treelevel_orig, 0);
-  if (args_info->sync_given)
-    write_into_file(outfile, "sync", 0, 0 );
+  if (args_info->nosync_given)
+    write_into_file(outfile, "nosync", 0, 0 );
   if (args_info->groupfile_given)
     write_into_file(outfile, "groupfile", args_info->groupfile_orig, 0);
   
@@ -543,7 +543,7 @@ cmdline_parser_internal (
         { "sleep",	1, NULL, 0 },
         { "append",	0, NULL, 0 },
         { "treelevel",	1, NULL, 0 },
-        { "sync",	0, NULL, 0 },
+        { "nosync",	0, NULL, 0 },
         { "groupfile",	1, NULL, 0 },
         { 0,  0, 0, 0 }
       };
@@ -667,14 +667,14 @@ cmdline_parser_internal (
               goto failure;
           
           }
-          /* sync.  */
-          else if (strcmp (long_options[option_index].name, "sync") == 0)
+          /* nosync.  */
+          else if (strcmp (long_options[option_index].name, "nosync") == 0)
           {
           
           
-            if (update_arg((void *)&(args_info->sync_flag), 0, &(args_info->sync_given),
-                &(local_args_info.sync_given), optarg, 0, 0, ARG_FLAG,
-                check_ambiguity, override, 1, 0, "sync", '-',
+            if (update_arg((void *)&(args_info->nosync_flag), 0, &(args_info->nosync_given),
+                &(local_args_info.nosync_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "nosync", '-',
                 additional_error))
               goto failure;
           
