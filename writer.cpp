@@ -12,6 +12,7 @@
 #include <climits>
 #include <sstream>
 #include <fstream>
+#include <iterator>
 
 #include <unistd.h>
 #include <mpi.h>
@@ -28,7 +29,13 @@
 
 using namespace std;
 
-int read_int (const char *fname, std::vector<int>& arr)
+template<typename T>
+std::vector<T> split(const std::string& line) {
+    std::istringstream is(line);
+    return std::vector<T>(std::istream_iterator<T>(is), std::istream_iterator<T>());
+}
+
+int read_int (const char *fname, std::vector<int>& arr1, std::vector<int>& arr2)
 {
   string line;
   ifstream f(fname);
@@ -36,7 +43,9 @@ int read_int (const char *fname, std::vector<int>& arr)
   {
     while (getline(f, line))
     {
-      arr.push_back(atoi(line.c_str()));
+      std::vector<int> vec = split<int>(line);
+      arr1.push_back(vec[0]);
+      if (vec.size()>1) arr2.push_back(vec[1]);
     }
     f.close();
   }
@@ -44,7 +53,7 @@ int read_int (const char *fname, std::vector<int>& arr)
   {
     cout << "Unable to open file";
   }
-  return (arr.size());
+  return (arr1.size());
 }
 
 int main(int argc, char *argv[])
@@ -155,12 +164,21 @@ int main(int argc, char *argv[])
     if (args_info.groupfile_given) 
     {
         stringstream ss;
-        std::vector<int> gid;
-        read_int(args_info.groupfile_arg, gid);
-        assert(gid.size() == nproc);
-        printf(">>> rank, gid = %d %d\n", rank, gid[rank]);
-        MPI_Comm_split(MPI_COMM_WORLD, gid[rank], rank, &comm);
-        ss << gid[rank];
+        std::vector<int> color;
+        std::vector<int> key;
+        read_int(args_info.groupfile_arg, color, key);
+        assert(color.size() == nproc);
+        //printf(">>> key.size() %lu\n", key.size());
+        if (key.size()==0)
+        {
+            if (rank==0) printf(">>> No key is given  in the groupfile.\n");
+            key.reserve(nproc);
+            key[rank] = rank;
+        }
+
+        printf(">>> rank, color, key = %d %d %d\n", rank, color[rank], key[rank]);
+        MPI_Comm_split(MPI_COMM_WORLD, color[rank], key[rank], &comm);
+        ss << color[rank];
         outputfile = outputfile + "-" + ss.str() + ".bp";
     }
 
