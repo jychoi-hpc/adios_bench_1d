@@ -13,9 +13,12 @@
 #include <climits>
 #include <mpi.h>
 #include <adios.h>
+#include <string.h>
+#include <unistd.h>
 #include "cmdline.h"
 
 #define MAXTASKS 8192
+#define BLOCK_SIZE 1024*1024*512
 
 int main(int argc, char *argv[])
 {
@@ -61,6 +64,22 @@ int main(int argc, char *argv[])
     adios_define_var (m_adios_group, "x", "", adios_integer, "nx", "gnx", "offs");
     adios_select_method (m_adios_group, args_info.writemethod_arg, args_info.wparams_arg, "");
 
+    void* tmp = malloc(BLOCK_SIZE);
+    memset(tmp, '\0', BLOCK_SIZE);
+
+    /*
+    int i=0;
+    char *buf[10];
+    while(i<10)
+    {
+        buf[i] = (char*)malloc(BLOCK_SIZE);
+        if (buf[i] == NULL)
+            printf("Memory allocation failed");
+        memset(buf[i],'\0',BLOCK_SIZE);
+        i++;
+    }
+    */
+
     std::vector<int> x(NX);
     std::string mode = "w";
 
@@ -101,6 +120,7 @@ int main(int argc, char *argv[])
         adios_write(f, "x", x.data());
         t[2] = MPI_Wtime();
         adios_close(f);
+        //sync();
         t[3] = MPI_Wtime();
 
         double elap[3];
