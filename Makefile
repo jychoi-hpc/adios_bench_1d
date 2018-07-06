@@ -7,6 +7,33 @@ LDFLAGS=-g
 ADIOS_INC=$(shell adios_config -c)
 ADIOS_LIB=$(shell adios_config -l)
 
+ifneq (,${HOST})
+  SYSTEMS := ${HOST}
+else
+  SYSTEMS := $(shell hostname)
+endif
+
+ifneq (,$(findstring titan, $(SYSTEMS)))
+  CC = cc
+  CXX = CC
+endif
+
+ifneq (,$(findstring cori, $(SYSTEMS)))
+  CC = cc
+  CXX = CC
+  LDFLAGS += -zmuldefs
+endif
+
+ifneq (,$(findstring theta, $(SYSTEMS)))
+  CC = cc
+  CXX = CC
+  LDFLAGS += -zmuldefs
+endif
+
+ifneq (,$(findstring sith, $(SYSTEMS)))
+  LDFLAGS += -Wl,--allow-multiple-definition
+endif
+
 default: writer reader
 
 all: default
